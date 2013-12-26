@@ -1,3 +1,3 @@
 # EventEmitter
 
-Simple EventEmitter class in Javascript.
+Simple event emitter, cancellable with "return false" statement

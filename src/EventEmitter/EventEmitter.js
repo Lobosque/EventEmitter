@@ -1,5 +1,5 @@
 /**
- * Very simple event emitter, with event and cancellable events with "return false" statement
+ * Simple event emitter, cancellable with "return false" statement
  *
  * @class EventEmitter
  * @author Darlan Alves <darlan@moovia.com>
