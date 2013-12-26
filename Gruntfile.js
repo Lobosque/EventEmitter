@@ -1,12 +1,12 @@
-module.exports = function(grunt) {
+module.exports = function (grunt) {
 	var pkg = grunt.file.readJSON('package.json'),
 		libName = pkg.name;
 
 	// wrap files
-	var wrap = function(files, dest) {
+	var wrap = function (files, dest) {
 		code = grunt.file.read('build/prefix.js').toString();
 
-		files.forEach(function(file) {
+		files.forEach(function (file) {
 			code += grunt.file.read(file).toString();
 		});
 
@@ -14,9 +14,9 @@ module.exports = function(grunt) {
 		grunt.file.write(dest, code);
 	};
 
-	grunt.registerTask('wrap', function() {
+	grunt.registerTask('wrap', function () {
 		var done = this.async();
-		grunt.file.glob('src/**/*.js', null, function(err, files) {
+		grunt.file.glob('src/**/*.js', null, function (err, files) {
 			if (!err) {
 				wrap(files, 'build/$assembled.js');
 			}
@@ -30,7 +30,7 @@ module.exports = function(grunt) {
 			banner: grunt.file.read('build/banner.txt').toString()
 		},
 
-		latest: {
+		build: {
 			src: 'build/$assembled.js',
 			dest: 'dist/' + libName + '-latest.js'
 		},
@@ -42,29 +42,55 @@ module.exports = function(grunt) {
 	};
 
 	var jasmine = {
-		latest: {
+		release: {
 			src: 'dist/' + libName + '-latest.js',
 			options: {
 				keepRunner: true,
-				outfile: './test.html',
-				specs: "test/**/*Spec.js"
+				outfile: './test-release.html',
+				specs: [
+					'test/matchers.js',
+					'test/**/*Spec.js'
+				]
+			}
+		},
+
+		build: {
+			src: 'build/$assembled.js',
+			options: {
+				keepRunner: true,
+				outfile: './test-build.html',
+				specs: [
+					'test/matchers.js',
+					'test/**/*Spec.js'
+				]
 			}
 		}
 	};
 
+	var watchOptions = {
+		build: {
+			files: [
+				'src/**/*.js',
+				'test/**/*Spec.js',
+			],
+			tasks: ['build']
+		}
+	}
+
 	grunt.initConfig({
 		pkg: pkg,
 		uglify: uglify,
-		jasmine: jasmine
+		jasmine: jasmine,
+		watch: watchOptions
 	});
 
-	Object.keys(pkg.devDependencies).forEach(function(name) {
+	Object.keys(pkg.devDependencies).forEach(function (name) {
 		if (name.substring(0, 6) === 'grunt-') {
 			grunt.loadNpmTasks(name);
 		}
 	});
 
-	grunt.registerTask('build', ['wrap', 'uglify:latest', 'jasmine']);
-	grunt.registerTask('release', ['wrap', 'uglify:release', 'jasmine']);
-	grunt.registerTask('test', ['jasmine']);
+	grunt.registerTask('build', ['wrap', 'uglify:build', 'jasmine:build']);
+	grunt.registerTask('release', ['wrap', 'uglify:release', 'jasmine:release']);
+	grunt.registerTask('test', ['jasmine:release']);
 };

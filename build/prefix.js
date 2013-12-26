@@ -1,2 +1,1 @@
-!function(exports) {
-
+! function (exports, undefined) {

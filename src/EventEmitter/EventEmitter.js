@@ -10,8 +10,7 @@ var slice = Array.prototype.slice,
 	eventSplitRe = /\s+|,\s?/;
 
 function getEventNames(events) {
-	var list = String(events).split(eventSplitRe) || [];
-	list.push('all');
+	var list = String(events).split(eventSplitRe);
 	return list;
 }
 
@@ -19,34 +18,79 @@ function getEventListeners(eventName) {
 	var callbacks = this.$callbacks || (this.$callbacks = {});
 
 	if (eventName) {
-		return callbacks[eventName];
+		return callbacks[eventName] || (callbacks[eventName] = []);
 	}
 
 	return callbacks;
 }
 
-function addListenerToEvent(eventName, callback, context) {
-	var callbacks = getEventListeners(eventName),
-		params = arguments.length > 3 ? slice.call(arguments, 3) : false;
+function addListenerToEvent(eventConfig) {
+	var callbacks = getEventListeners(eventConfig.name);
 
-	callbacks.push({
-		callback: callback,
-		context: context || this,
-		params: params
-	});
+	delete eventConfig.name;
+	callbacks.push(eventConfig);
+
+	// TODO replace while(true) with while(i--)?
+
+	return eventConfig;
+}
+
+function createListEventConfig(events, callback, context, params) {
+	if (!(events && callback && typeof callback === 'function')) {
+		return [];
+	}
+
+	var eventName, eventConfig, eventList = getEventNames(events),
+		result = [];
+
+	while (true) {
+		eventName = eventList.shift();
+		if (eventName === undefined) break;
+
+		eventConfig = {
+			name: eventName,
+			callback: callback,
+			context: context || null,
+			params: params
+		};
+
+		result.push(eventConfig);
+	}
+
+	return result;
+}
+
+function getDefaultParams(args) {
+	return args.length > 3 ? slice.call(args, 3) : false;
 }
 
 function addListeners(events, callback, context) {
-	if (!(events && callback && typeof callback === 'function')) {
-		return this;
+	var params = getDefaultParams(arguments),
+		listEventConfig = createListEventConfig(events, callback, context, params),
+		eventConfig;
+
+	while (true) {
+		eventConfig = listEventConfig.shift();
+		if (eventConfig === undefined) break;
+
+		addListenerToEvent(eventConfig);
 	}
 
-	var eventName, eventList = getEventNames(events);
+	return this;
+}
 
-	do {
-		eventName = eventList.shift();
-		addListenerToEvent(eventName, callback, context);
-	} while (eventName !== undefined);
+function addOnceListeners(events, callback, context) {
+	var params = getDefaultParams(arguments),
+		listEventConfig = createListEventConfig(events, callback, context, params),
+		eventConfig;
+
+	while (true) {
+		eventConfig = listEventConfig.shift();
+		if (eventConfig === undefined) break;
+
+		eventConfig.once = true;
+		addListenerToEvent(eventConfig);
+	}
 
 	return this;
 }
@@ -70,13 +114,13 @@ function removeListenersOfName(eventName, callback, context) {
 		eventConfig;
 
 	if (context === undefined) {
-		context = false;
+		context = null;
 	}
 
 	for (; index < len; index++) {
 		eventConfig = listenerList[index];
 
-		if (callback === eventConfig.callback && (context === false || context === eventConfig.context)) {
+		if (callback === eventConfig.callback && (context === null || context === eventConfig.context)) {
 			listenerList.splice(index, 1);
 		}
 	}
@@ -94,10 +138,12 @@ function removeListeners(events, callback, context) {
 		result = true,
 		eventName;
 
-	do {
+	while (true) {
 		eventName = eventList.shift();
+		if (eventName === undefined) break;
+
 		result = result && removeListenersOfName(eventName, callback, context);
-	} while (eventName !== undefined);
+	}
 
 	return result;
 }
@@ -126,6 +172,10 @@ function triggerEventsOfName(eventName, params) {
 			args = args.concat(params);
 		}
 
+		if (eventConfig.once) {
+			listeners.splice(index, 1);
+		}
+
 		result = eventConfig.callback.apply(eventConfig.context, args);
 		if (result === false) {
 			break;
@@ -145,42 +195,14 @@ function triggerEvents(events) {
 		params = arguments.length > 1 ? slice.call(arguments, 1) : [],
 		eventName;
 
-	do {
+	while (true) {
 		eventName = eventList.shift();
+		if (eventName === undefined) break;
+
 		result = result && triggerEventsOfName(eventName, params);
-	} while (eventName !== undefined);
-
-	return !!result;
-}
-
-function addOnceListeners(events, callback, context) {
-	var eventList = getEventNames(events),
-		params = arguments.length > 3 ? slice.call(arguments, 3) : false,
-		eventName,
-		handler;
-
-	context = context || this;
-
-	function makeOnceHandler(eventName, callback, context, params) {
-		return function () {
-			var args = [];
-
-			if (params !== false) {
-				args = args.concat(params);
-			}
-
-			args.concat(arguments);
-
-			removeListenersOfName(eventName, handler, context);
-			callback.apply(context, args);
-		};
 	}
 
-	do {
-		eventName = eventList.shift();
-		handler = makeOnceHandler(eventName, callback, context, params);
-		addListenerToEvent(eventName, handler, context);
-	} while (eventName !== undefined);
+	return !!result;
 }
 
 EventEmitter.prototype = {
