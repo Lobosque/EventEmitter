@@ -76,7 +76,9 @@ function addListeners(events, callback, context) {
 		addListenerToEvent(eventConfig);
 	}
 
-	return this;
+	return function() {
+		removeListeners(events, callback, context);
+	};
 }
 
 function addOnceListeners(events, callback, context) {
@@ -92,7 +94,9 @@ function addOnceListeners(events, callback, context) {
 		addListenerToEvent(eventConfig);
 	}
 
-	return this;
+	return function() {
+		removeListeners(events, callback, context);
+	};
 }
 
 function removeAllListenersOfName(eventName) {
@@ -259,7 +263,7 @@ EventEmitter.prototype = {
 	/**
 	 * Suspend events
 	 */
-	suspendEvents: function () {
+	suspendEvents: function() {
 		this.pauseEvents = true;
 		return this;
 	},
@@ -267,7 +271,7 @@ EventEmitter.prototype = {
 	/**
 	 * Continue events
 	 */
-	resumeEvents: function () {
+	resumeEvents: function() {
 		this.pauseEvents = false;
 		return this;
 	}
