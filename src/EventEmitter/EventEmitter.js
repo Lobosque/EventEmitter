@@ -4,7 +4,7 @@
  * @class EventEmitter
  * @author Darlan Alves <darlan@moovia.com>
  */
-function EventEmitter() {}
+var EventEmitter = function EventEmitter() {}
 
 var slice = Array.prototype.slice,
 	eventSplitRe = /\s+|,\s?/;
@@ -25,7 +25,7 @@ function getEventListeners(eventName) {
 }
 
 function addListenerToEvent(eventConfig) {
-	var callbacks = getEventListeners(eventConfig.name);
+	var callbacks = this.getEventListeners(eventConfig.name);
 
 	delete eventConfig.name;
 	callbacks.push(eventConfig);
@@ -73,11 +73,11 @@ function addListeners(events, callback, context) {
 		eventConfig = listEventConfig.shift();
 		if (eventConfig === undefined) break;
 
-		addListenerToEvent(eventConfig);
+		this.addListenerToEvent(eventConfig);
 	}
 
 	return function() {
-		removeListeners(events, callback, context);
+		this.removeListeners(events, callback, context);
 	};
 }
 
@@ -91,11 +91,11 @@ function addOnceListeners(events, callback, context) {
 		if (eventConfig === undefined) break;
 
 		eventConfig.once = true;
-		addListenerToEvent(eventConfig);
+		this.addListenerToEvent(eventConfig);
 	}
 
 	return function() {
-		removeListeners(events, callback, context);
+		this.removeListeners(events, callback, context);
 	};
 }
 
@@ -109,10 +109,10 @@ function removeAllListenersOfName(eventName) {
 
 function removeListenersOfName(eventName, callback, context) {
 	if (!callback) {
-		return removeAllListenersOfName(eventName);
+		return this.removeAllListenersOfName(eventName);
 	}
 
-	var listenerList = getEventListeners(eventName),
+	var listenerList = this.getEventListeners(eventName),
 		index = 0,
 		len = listenerList.length,
 		eventConfig;
@@ -146,14 +146,14 @@ function removeListeners(events, callback, context) {
 		eventName = eventList.shift();
 		if (eventName === undefined) break;
 
-		result = result && removeListenersOfName(eventName, callback, context);
+		result = result && this.removeListenersOfName(eventName, callback, context);
 	}
 
 	return result;
 }
 
 function triggerEventsOfName(eventName, params) {
-	var listeners = getEventListeners(eventName),
+	var listeners = this.getEventListeners(eventName),
 		len = listeners.length,
 		paramsLen = params.length,
 		result = true,
@@ -203,7 +203,7 @@ function triggerEvents(events) {
 		eventName = eventList.shift();
 		if (eventName === undefined) break;
 
-		result = result && triggerEventsOfName(eventName, params);
+		result = result && this.triggerEventsOfName(eventName, params);
 	}
 
 	return !!result;
@@ -274,5 +274,16 @@ EventEmitter.prototype = {
 	resumeEvents: function() {
 		this.pauseEvents = false;
 		return this;
-	}
+	},
+
+	/**
+	 * @private
+	 * Private methods are declared into prototype and called as `this.theMethod()` to
+	 * keep the original scope.
+	 */
+	triggerEventsOfName: triggerEventsOfName,
+	removeListenersOfName: removeListenersOfName,
+	removeAllListenersOfName: removeAllListenersOfName,
+	addListenerToEvent: addListenerToEvent,
+	getEventListeners: getEventListeners
 };
