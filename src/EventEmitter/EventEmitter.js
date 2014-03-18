@@ -113,6 +113,7 @@ function removeListenersOfName(eventName, callback, context) {
 	}
 
 	var listenerList = this.getEventListeners(eventName),
+		newList = [],
 		index = 0,
 		len = listenerList.length,
 		eventConfig;
@@ -124,10 +125,12 @@ function removeListenersOfName(eventName, callback, context) {
 	for (; index < len; index++) {
 		eventConfig = listenerList[index];
 
-		if (callback === eventConfig.callback && (context === null || context === eventConfig.context)) {
-			listenerList.splice(index, 1);
-		}
+		if (callback === eventConfig.callback && (context === null || context === eventConfig.context)) continue;
+
+		newList.push(listenerList[index]);
 	}
+
+	this.$callbacks[eventName] = newList;
 
 	return true;
 }
