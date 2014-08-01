@@ -16,10 +16,11 @@
  */
 var EventEmitter = function EventEmitter() {},
 	slice = Array.prototype.slice,
-	eventSplitRe = /\s+|,\s?/;
+	eventSplitRe = /\s+|,\s?/,
+	trimRe = /^\s+|\s+$/g;
 
 function _getEventNames(events) {
-	var list = String(events).split(eventSplitRe);
+	var list = String(events).replace(trimRe, '').split(eventSplitRe);
 	return list;
 }
 
@@ -34,6 +35,8 @@ function $getEventListeners(eventName) {
 }
 
 function $addListenerToEvent(eventConfig) {
+	if (!eventConfig.name) throw new Error('Missing event name');
+
 	var callbacks = $getEventListeners.call(this, eventConfig.name);
 
 	delete eventConfig.name;

@@ -1,7 +1,7 @@
 var gulp = require('gulp'),
 	concat = require('gulp-concat'),
 	jasmine = require('gulp-jasmine'),
-	rename = require('gulp-rename'),
+	uglify = require('gulp-uglify'),
 	multipipe = require('multipipe'),
 	fs = require('fs'),
 
@@ -25,13 +25,16 @@ gulp.task('build-latest', function() {
 });
 
 gulp.task('build-release', function() {
+	console.log('Building version ' + version);
+
 	var pipe = multipipe(
-		gulp.src('build/EventEmitter.js'),
+		gulp.src('dist/EventEmitter-latest.js'),
+		concat('EventEmitter-' + version + '.js'),
 		uglify(),
-		rename('EventEmitter-' + version + '.js'),
-		gulp.dest('dist')
+		gulp.dest('dist/')
 	);
-})
+	pipeErr(pipe);
+});
 
 gulp.task('watch', function() {
 	gulp.watch(src, ['build', 'test']);
@@ -42,7 +45,7 @@ gulp.task('test', function() {
 });
 
 gulp.task('build', ['build-latest', 'test']);
-gulp.task('release', ['build', 'test', 'build-release']);
+gulp.task('release', ['build-latest', 'test', 'build-release']);
 
 function pipeErr(pipe) {
 	pipe.on('error', function(err) {
