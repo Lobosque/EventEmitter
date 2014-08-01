@@ -1,6 +1,6 @@
 /**
  * EventEmitter
- * Author: Darlan Alves <darlan@moovia.com>
+ * Author: Darlan Alves <me@darlanalv.es>
  * Built on <%= grunt.template.today('yyyy-mm-dd') %>
  */
 

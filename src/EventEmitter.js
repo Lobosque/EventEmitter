@@ -1,20 +1,21 @@
+'use strict';
+
 /**
  * Simple event emitter, cancellable with "return false" statement
  *
  * @class EventEmitter
- * @author Darlan Alves <darlan@moovia.com>
+ * @author Darlan Alves <me@darlanalv.es>
  */
-var EventEmitter = function EventEmitter() {}
-
-var slice = Array.prototype.slice,
+var EventEmitter = function EventEmitter() {},
+	slice = Array.prototype.slice,
 	eventSplitRe = /\s+|,\s?/;
 
-function getEventNames(events) {
+function _getEventNames(events) {
 	var list = String(events).split(eventSplitRe);
 	return list;
 }
 
-function getEventListeners(eventName) {
+function $getEventListeners(eventName) {
 	var callbacks = this.$callbacks || (this.$callbacks = {});
 
 	if (eventName) {
@@ -24,8 +25,8 @@ function getEventListeners(eventName) {
 	return callbacks;
 }
 
-function addListenerToEvent(eventConfig) {
-	var callbacks = this.getEventListeners(eventConfig.name);
+function $addListenerToEvent(eventConfig) {
+	var callbacks = $getEventListeners.call(this, eventConfig.name);
 
 	delete eventConfig.name;
 	callbacks.push(eventConfig);
@@ -40,7 +41,7 @@ function createListEventConfig(events, callback, context, params) {
 		return [];
 	}
 
-	var eventName, eventConfig, eventList = getEventNames(events),
+	var eventName, eventConfig, eventList = _getEventNames(events),
 		result = [];
 
 	while (true) {
@@ -73,7 +74,7 @@ function addListeners(events, callback, context) {
 		eventConfig = listEventConfig.shift();
 		if (eventConfig === undefined) break;
 
-		this.addListenerToEvent(eventConfig);
+		$addListenerToEvent.call(this, eventConfig);
 	}
 
 	return function() {
@@ -91,7 +92,7 @@ function addOnceListeners(events, callback, context) {
 		if (eventConfig === undefined) break;
 
 		eventConfig.once = true;
-		this.addListenerToEvent(eventConfig);
+		$addListenerToEvent.call(this, eventConfig);
 	}
 
 	return function() {
@@ -107,12 +108,12 @@ function removeAllListenersOfName(eventName) {
 	return delete this.$callbacks[eventName];
 }
 
-function removeListenersOfName(eventName, callback, context) {
+function $removeListenersOfName(eventName, callback, context) {
 	if (!callback) {
 		return this.removeAllListenersOfName(eventName);
 	}
 
-	var listenerList = this.getEventListeners(eventName),
+	var listenerList = $getEventListeners.call(this, eventName),
 		newList = [],
 		index = 0,
 		len = listenerList.length,
@@ -141,7 +142,7 @@ function removeListeners(events, callback, context) {
 		return this;
 	}
 
-	var eventList = getEventNames(events),
+	var eventList = _getEventNames(events),
 		result = true,
 		eventName;
 
@@ -149,14 +150,14 @@ function removeListeners(events, callback, context) {
 		eventName = eventList.shift();
 		if (eventName === undefined) break;
 
-		result = result && this.removeListenersOfName(eventName, callback, context);
+		result = result && $removeListenersOfName.call(this, eventName, callback, context);
 	}
 
 	return result;
 }
 
-function triggerEventsOfName(eventName, params) {
-	var listeners = this.getEventListeners(eventName),
+function $triggerEventsOfName(eventName, params) {
+	var listeners = $getEventListeners.call(this, eventName),
 		len = listeners.length,
 		paramsLen = params.length,
 		result = true,
@@ -197,7 +198,7 @@ function triggerEvents(events) {
 		return this;
 	}
 
-	var eventList = getEventNames(events),
+	var eventList = _getEventNames(events),
 		result = true,
 		params = arguments.length > 1 ? slice.call(arguments, 1) : [],
 		eventName;
@@ -206,7 +207,7 @@ function triggerEvents(events) {
 		eventName = eventList.shift();
 		if (eventName === undefined) break;
 
-		result = result && this.triggerEventsOfName(eventName, params);
+		result = result && $triggerEventsOfName.call(this, eventName, params);
 	}
 
 	return !!result;
@@ -221,7 +222,9 @@ EventEmitter.prototype = {
 	 * Returns the list of registered callbacks
 	 * @return {Object}
 	 */
-	getListeners: getEventListeners,
+	getListeners: function() {
+		$getEventListeners.apply(this, arguments);
+	},
 
 	/**
 	 * Remove all listeners of `events`
@@ -277,16 +280,5 @@ EventEmitter.prototype = {
 	resumeEvents: function() {
 		this.pauseEvents = false;
 		return this;
-	},
-
-	/**
-	 * @private
-	 * Private methods are declared into prototype and called as `this.theMethod()` to
-	 * keep the original scope.
-	 */
-	triggerEventsOfName: triggerEventsOfName,
-	removeListenersOfName: removeListenersOfName,
-	removeAllListenersOfName: removeAllListenersOfName,
-	addListenerToEvent: addListenerToEvent,
-	getEventListeners: getEventListeners
+	}
 };

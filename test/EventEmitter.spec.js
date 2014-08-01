@@ -1,5 +1,6 @@
 describe('EventEmitter', function() {
-	var ee;
+	var ee,
+		EventEmitter = require('../dist/EventEmitter-latest.js').EventEmitter;
 
 	beforeEach(function() {
 		ee = new EventEmitter();
@@ -10,16 +11,16 @@ describe('EventEmitter', function() {
 	})
 
 	it('should have methods to register, emit and remove/clear event listeners', function() {
-		expect(ee.on).toBeFunction();
-		expect(ee.off).toBeFunction();
-		expect(ee.once).toBeFunction();
-		expect(ee.emit).toBeFunction();
-		expect(ee.getListeners).toBeFunction();
+		expect(typeof ee.on).toBe('function');
+		expect(typeof ee.off).toBe('function');
+		expect(typeof ee.once).toBe('function');
+		expect(typeof ee.emit).toBe('function');
+		expect(typeof ee.getListeners).toBe('function');
 	});
 
 	it('should have methods to suspend/resume events', function() {
-		expect(ee.suspendEvents).toBeFunction();
-		expect(ee.resumeEvents).toBeFunction();
+		expect(typeof ee.suspendEvents).toBe('function');
+		expect(typeof ee.resumeEvents).toBe('function');
 	});
 
 	it('should emit events', function() {

@@ -1,0 +1,2 @@
+	return exports.EventEmitter = EventEmitter;
+}(typeof exports !== 'undefined' ? exports : this);
