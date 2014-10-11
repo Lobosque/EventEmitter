@@ -1,5 +1,4 @@
 'use strict';
-
 /**
  * Simple event emitter, cancellable with "return false" statement
  *
@@ -71,7 +70,8 @@ function getDefaultParams(args) {
 function addListeners(events, callback, context) {
 	var params = getDefaultParams(arguments),
 		listEventConfig = createListEventConfig(events, callback, context, params),
-		eventConfig;
+		eventConfig,
+		me = this;
 
 	while (true) {
 		eventConfig = listEventConfig.shift();
@@ -81,7 +81,7 @@ function addListeners(events, callback, context) {
 	}
 
 	return function() {
-		this.removeListeners(events, callback, context);
+		me.off(events, callback, context);
 	};
 }
 
@@ -113,7 +113,7 @@ function removeAllListenersOfName(eventName) {
 
 function $removeListenersOfName(eventName, callback, context) {
 	if (!callback) {
-		return this.removeAllListenersOfName(eventName);
+		return removeAllListenersOfName.call(this, eventName);
 	}
 
 	var listenerList = $getEventListeners.call(this, eventName),
@@ -159,6 +159,9 @@ function removeListeners(events, callback, context) {
 	return result;
 }
 
+/**
+ * @return {Boolean} False if a handler stopped the events, true otherwise
+ */
 function $triggerEventsOfName(eventName, params) {
 	var listeners = $getEventListeners.call(this, eventName),
 		len = listeners.length,
@@ -185,15 +188,17 @@ function $triggerEventsOfName(eventName, params) {
 
 		if (eventConfig.once) {
 			listeners.splice(index, 1);
+			index--;
 		}
 
 		result = eventConfig.callback.apply(eventConfig.context, args);
+
 		if (result === false) {
 			break;
 		}
 	}
 
-	return result;
+	return true;
 }
 
 function triggerEvents(events) {
