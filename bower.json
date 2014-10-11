@@ -1,0 +1,17 @@
+{
+  "name": "ya-EventEmitter",
+  "main": "src/EventEmitter.js",
+  "version": "0.0.4",
+  "homepage": "https://github.com/darlanalves/EventEmitter",
+  "authors": [
+    "Darlan Alves <me@darlanalv.es>"
+  ],
+  "description": "General purpose EventEmitter implementation with cancellable events",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test"
+  ]
+}

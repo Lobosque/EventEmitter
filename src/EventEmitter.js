@@ -1,292 +1,316 @@
-'use strict';
-/**
- * Simple event emitter, cancellable with "return false" statement
- *
- * @class EventEmitter
- * @author Darlan Alves <me@darlanalv.es>
- */
-var EventEmitter = function EventEmitter() {},
-	slice = Array.prototype.slice,
-	eventSplitRe = /\s+|,\s?/,
-	trimRe = /^\s+|\s+$/g;
+(function(global) {
+	'use strict';
+	/**
+	 * Simple event emitter, cancellable with "return false" statement
+	 *
+	 * @class EventEmitter
+	 * @author Darlan Alves <me@darlanalv.es>
+	 */
+	var EventEmitter = function EventEmitter() {},
+		slice = Array.prototype.slice,
+		eventSplitRe = / |, /,
+		trimRe = /^\s+|\s+$/g;
 
-function _getEventNames(events) {
-	var list = String(events).replace(trimRe, '').split(eventSplitRe);
-	return list;
-}
-
-function $getEventListeners(eventName) {
-	var callbacks = this.$callbacks || (this.$callbacks = {});
-
-	if (eventName) {
-		return callbacks[eventName] || (callbacks[eventName] = []);
+	function _getEventNames(events) {
+		var list = String(events).replace(trimRe, '').split(eventSplitRe);
+		return list;
 	}
 
-	return callbacks;
-}
+	function $getEventListeners(eventName) {
+		var callbacks = this.$callbacks || (this.$callbacks = {});
 
-function $addListenerToEvent(eventConfig) {
-	if (!eventConfig.name) throw new Error('Missing event name');
+		if (eventName) {
+			return callbacks[eventName] || (callbacks[eventName] = []);
+		}
 
-	var callbacks = $getEventListeners.call(this, eventConfig.name);
-
-	delete eventConfig.name;
-	callbacks.push(eventConfig);
-
-	// TODO replace while(true) with while(i--)?
-
-	return eventConfig;
-}
-
-function createListEventConfig(events, callback, context, params) {
-	if (!(events && callback && typeof callback === 'function')) {
-		return [];
+		return callbacks;
 	}
 
-	var eventName, eventConfig, eventList = _getEventNames(events),
-		result = [];
+	function $addListenerToEvent(eventConfig) {
+		if (!eventConfig.name) throw new Error('Missing event name');
 
-	while (true) {
-		eventName = eventList.shift();
-		if (eventName === undefined) break;
+		var callbacks = $getEventListeners.call(this, eventConfig.name);
 
-		eventConfig = {
-			name: eventName,
-			callback: callback,
-			context: context || null,
-			params: params
+		delete eventConfig.name;
+		callbacks.push(eventConfig);
+
+		// TODO replace while(true) with while(i--)?
+
+		return eventConfig;
+	}
+
+	function createListEventConfig(events, callback, context, params) {
+		if (!(events && callback && typeof callback === 'function')) {
+			return [];
+		}
+
+		var eventName, eventConfig, eventList = _getEventNames(events),
+			result = [];
+
+		while (true) {
+			eventName = eventList.shift();
+			if (eventName === undefined) break;
+
+			eventConfig = {
+				name: eventName,
+				callback: callback,
+				context: context || null,
+				params: params
+			};
+
+			result.push(eventConfig);
+		}
+
+		return result;
+	}
+
+	function getDefaultParams(args) {
+		return args.length > 3 ? slice.call(args, 3) : false;
+	}
+
+	function addListeners(events, callback, context) {
+		var params = getDefaultParams(arguments),
+			listEventConfig = createListEventConfig(events, callback, context, params),
+			eventConfig,
+			me = this;
+
+		while (true) {
+			eventConfig = listEventConfig.shift();
+			if (eventConfig === undefined) break;
+
+			$addListenerToEvent.call(this, eventConfig);
+		}
+
+		return function() {
+			me.off(events, callback, context);
 		};
-
-		result.push(eventConfig);
 	}
 
-	return result;
-}
+	function addOnceListeners(events, callback, context) {
+		var params = getDefaultParams(arguments),
+			listEventConfig = createListEventConfig(events, callback, context, params),
+			eventConfig;
 
-function getDefaultParams(args) {
-	return args.length > 3 ? slice.call(args, 3) : false;
-}
+		while (true) {
+			eventConfig = listEventConfig.shift();
+			if (eventConfig === undefined) break;
 
-function addListeners(events, callback, context) {
-	var params = getDefaultParams(arguments),
-		listEventConfig = createListEventConfig(events, callback, context, params),
-		eventConfig,
-		me = this;
+			eventConfig.once = true;
+			$addListenerToEvent.call(this, eventConfig);
+		}
 
-	while (true) {
-		eventConfig = listEventConfig.shift();
-		if (eventConfig === undefined) break;
-
-		$addListenerToEvent.call(this, eventConfig);
+		return function() {
+			this.removeListeners(events, callback, context);
+		};
 	}
 
-	return function() {
-		me.off(events, callback, context);
-	};
-}
+	function removeAllListenersOfName(eventName) {
+		if (!(this.$callbacks && this.$callbacks[eventName])) {
+			return false;
+		}
 
-function addOnceListeners(events, callback, context) {
-	var params = getDefaultParams(arguments),
-		listEventConfig = createListEventConfig(events, callback, context, params),
-		eventConfig;
-
-	while (true) {
-		eventConfig = listEventConfig.shift();
-		if (eventConfig === undefined) break;
-
-		eventConfig.once = true;
-		$addListenerToEvent.call(this, eventConfig);
+		return delete this.$callbacks[eventName];
 	}
 
-	return function() {
-		this.removeListeners(events, callback, context);
-	};
-}
+	function $removeListenersOfName(eventName, callback, context) {
+		if (!callback) {
+			return removeAllListenersOfName.call(this, eventName);
+		}
 
-function removeAllListenersOfName(eventName) {
-	if (!(this.$callbacks && this.$callbacks[eventName])) {
-		return false;
-	}
+		var listenerList = $getEventListeners.call(this, eventName),
+			newList = [],
+			index = 0,
+			len = listenerList.length,
+			eventConfig;
 
-	return delete this.$callbacks[eventName];
-}
+		if (context === undefined) {
+			context = null;
+		}
 
-function $removeListenersOfName(eventName, callback, context) {
-	if (!callback) {
-		return removeAllListenersOfName.call(this, eventName);
-	}
+		for (; index < len; index++) {
+			eventConfig = listenerList[index];
 
-	var listenerList = $getEventListeners.call(this, eventName),
-		newList = [],
-		index = 0,
-		len = listenerList.length,
-		eventConfig;
+			if (callback === eventConfig.callback && (context === null || context === eventConfig.context)) continue;
 
-	if (context === undefined) {
-		context = null;
-	}
+			newList.push(listenerList[index]);
+		}
 
-	for (; index < len; index++) {
-		eventConfig = listenerList[index];
+		this.$callbacks[eventName] = newList;
 
-		if (callback === eventConfig.callback && (context === null || context === eventConfig.context)) continue;
-
-		newList.push(listenerList[index]);
-	}
-
-	this.$callbacks[eventName] = newList;
-
-	return true;
-}
-
-function removeListeners(events, callback, context) {
-	if (!(events || callback)) {
-		delete this.$callbacks;
-		return this;
-	}
-
-	var eventList = _getEventNames(events),
-		result = true,
-		eventName;
-
-	while (true) {
-		eventName = eventList.shift();
-		if (eventName === undefined) break;
-
-		result = result && $removeListenersOfName.call(this, eventName, callback, context);
-	}
-
-	return result;
-}
-
-/**
- * @return {Boolean} False if a handler stopped the events, true otherwise
- */
-function $triggerEventsOfName(eventName, params) {
-	var listeners = $getEventListeners.call(this, eventName),
-		len = listeners.length,
-		paramsLen = params.length,
-		result = true,
-		index = 0,
-		eventConfig, args;
-
-	if (len === 0) {
 		return true;
 	}
 
-	for (; index < len; index++) {
-		eventConfig = listeners[index];
-		args = [];
-
-		if (eventConfig.params !== false) {
-			args = args.concat(eventConfig.params);
+	function removeListeners(events, callback, context) {
+		if (!(events || callback)) {
+			delete this.$callbacks;
+			return this;
 		}
 
-		if (paramsLen !== 0) {
-			args = args.concat(params);
+		var eventList = _getEventNames(events),
+			result = true,
+			eventName;
+
+		while (true) {
+			eventName = eventList.shift();
+			if (eventName === undefined) break;
+
+			result = result && $removeListenersOfName.call(this, eventName, callback, context);
 		}
 
-		if (eventConfig.once) {
-			listeners.splice(index, 1);
-			index--;
+		return result;
+	}
+
+	/**
+	 * @return {Boolean} False if a handler stopped the events, true otherwise
+	 */
+	function $triggerEventsOfName(eventName, params) {
+		var listeners = $getEventListeners.call(this, eventName),
+			len = listeners.length;
+
+		if (len === 0) {
+			return true;
 		}
 
-		result = eventConfig.callback.apply(eventConfig.context, args);
+		var paramsLen = params.length,
+			result = true,
+			index = 0,
+			args = [],
+			eventConfig;
 
-		if (result === false) {
-			break;
+		for (; index < len; index++) {
+			eventConfig = listeners[index];
+
+			if (eventConfig === undefined) continue;
+
+			args.length = 0;
+
+			if (eventConfig.params !== false) {
+				args = args.concat(eventConfig.params);
+			}
+
+			if (paramsLen !== 0) {
+				args = args.concat(params);
+			}
+
+			if (eventConfig.once) {
+				$removeListenersOfName.call(this, eventName, eventConfig.callback, eventConfig.context);
+			}
+
+			result = eventConfig.callback.apply(eventConfig.context, args);
+
+			if (result === false) {
+				return false;
+			}
 		}
+
+		return true;
 	}
 
-	return true;
-}
+	function triggerEvents(events) {
+		if (this.pauseEvents) {
+			return this;
+		}
 
-function triggerEvents(events) {
-	if (this.pauseEvents) {
-		return this;
+		var eventList = _getEventNames(events),
+			max = eventList.length,
+			result = true,
+			params = arguments.length > 1 ? slice.call(arguments, 1) : [],
+			index = 0,
+			eventName;
+
+		for (; index < max; index++) {
+			eventName = eventList[index];
+
+			if (!eventName) continue;
+
+			result = $triggerEventsOfName.call(this, eventName, params);
+
+			// if (result === false) break;
+		}
+
+		return result;
 	}
 
-	var eventList = _getEventNames(events),
-		result = true,
-		params = arguments.length > 1 ? slice.call(arguments, 1) : [],
-		eventName;
+	EventEmitter.prototype = {
+		constructor: EventEmitter,
 
-	while (true) {
-		eventName = eventList.shift();
-		if (eventName === undefined) break;
+		pauseEvents: false,
 
-		result = result && $triggerEventsOfName.call(this, eventName, params);
+		/**
+		 * Returns the list of registered callbacks
+		 * @return {Object}
+		 */
+		getListeners: function() {
+			$getEventListeners.apply(this, arguments);
+		},
+
+		/**
+		 * Remove all listeners of `events`
+		 */
+		clearListeners: removeListeners,
+
+		/**
+		 * Adds event listeners
+		 * @param {String} events			Event name or names, e.g.'click save', or a special catch-all event name: `all`
+		 * @param {Function} callback		Event callback
+		 * @param {Object} context			Context where the callback should be called
+		 * @param params...					Extra event arguments
+		 */
+		on: addListeners,
+
+		/**
+		 * Removes an event listener. The parameters must be identical to ones passed
+		 * to {@link #addListener}
+		 *
+		 * @param {String} events
+		 * @param {Function} callback
+		 * @param {Object} context
+		 */
+		off: removeListeners,
+
+		/**
+		 * Event trigger
+		 * @param {String} events
+		 * @param params...
+		 */
+		emit: triggerEvents,
+
+		/**
+		 * Listen to an event and drop listener once it happens.
+		 * This method follows the same rules of {@link #addListener}
+		 * @param {String} ename        Event to bind
+		 * @param {Function} fn         Event handler
+		 * @param {Object} scope        Scope where the handler will be called
+		 */
+		once: addOnceListeners,
+
+		/**
+		 * Suspend events
+		 */
+		suspendEvents: function() {
+			this.pauseEvents = true;
+			return this;
+		},
+
+		/**
+		 * Continue events
+		 */
+		resumeEvents: function() {
+			this.pauseEvents = false;
+			return this;
+		}
+	};
+
+	function factory() {
+		return EventEmitter;
 	}
 
-	return !!result;
-}
-
-EventEmitter.prototype = {
-	constructor: EventEmitter,
-
-	pauseEvents: false,
-
-	/**
-	 * Returns the list of registered callbacks
-	 * @return {Object}
-	 */
-	getListeners: function() {
-		$getEventListeners.apply(this, arguments);
-	},
-
-	/**
-	 * Remove all listeners of `events`
-	 */
-	clearListeners: removeListeners,
-
-	/**
-	 * Adds event listeners
-	 * @param {String} events			Event name or names, e.g.'click save', or a special catch-all event name: `all`
-	 * @param {Function} callback		Event callback
-	 * @param {Object} context			Context where the callback should be called
-	 * @param params...					Extra event arguments
-	 */
-	on: addListeners,
-
-	/**
-	 * Removes an event listener. The parameters must be identical to ones passed
-	 * to {@link #addListener}
-	 *
-	 * @param {String} events
-	 * @param {Function} callback
-	 * @param {Object} context
-	 */
-	off: removeListeners,
-
-	/**
-	 * Event trigger
-	 * @param {String} events
-	 * @param params...
-	 */
-	emit: triggerEvents,
-
-	/**
-	 * Listen to an event and drop listener once it happens.
-	 * This method follows the same rules of {@link #addListener}
-	 * @param {String} ename        Event to bind
-	 * @param {Function} fn         Event handler
-	 * @param {Object} scope        Scope where the handler will be called
-	 */
-	once: addOnceListeners,
-
-	/**
-	 * Suspend events
-	 */
-	suspendEvents: function() {
-		this.pauseEvents = true;
-		return this;
-	},
-
-	/**
-	 * Continue events
-	 */
-	resumeEvents: function() {
-		this.pauseEvents = false;
-		return this;
+	if (typeof define === 'function' && define.amd) {
+		define(factory);
+	} else if (typeof module !== 'undefined' && module.exports) {
+		module.exports = EventEmitter
+	} else {
+		global.EventEmitter = EventEmitter;
 	}
-};
+
+})(this);

@@ -1,12 +1,12 @@
 describe('EventEmitter', function() {
-	var ee,
-		EventEmitter = require('../dist/EventEmitter-latest.js').EventEmitter;
+	var ee;
 
 	beforeEach(function() {
 		ee = new EventEmitter();
 	});
 
 	afterEach(function() {
+		ee.off();
 		ee = null;
 	})
 
@@ -26,21 +26,21 @@ describe('EventEmitter', function() {
 	it('should emit events', function() {
 		var spy = jasmine.createSpy();
 
-		ee.on('event', spy);
-		ee.emit('event');
+		ee.on('emit-events', spy);
+		ee.emit('emit-events');
 
 		expect(spy).toHaveBeenCalled();
 	});
 
-	it('should emit event once if it was registered with "once" method', function() {
+	it('should run handler only once if it was registered with "once" method', function() {
 		var count = 0;
 
-		ee.once('count', function() {
+		ee.once('once', function() {
 			count++;
 		});
 
-		ee.emit('count');
-		ee.emit('count');
+		ee.emit('once');
+		ee.emit('once');
 
 		expect(count).toBe(1);
 	});
@@ -61,15 +61,43 @@ describe('EventEmitter', function() {
 		var spy = jasmine.createSpy(),
 			context = {};
 
-		ee.on('event', spy, context);
+		ee.on('suspended', spy, context);
 
 		ee.suspendEvents();
-		ee.emit('event');
+		ee.emit('suspended');
 
 		expect(spy).not.toHaveBeenCalled();
 
 		ee.resumeEvents();
-		ee.emit('event');
+		ee.emit('suspended');
 		expect(spy).toHaveBeenCalled();
+	});
+
+	it('should stop emitting events if one handler returns false, also returning false.', function() {
+		var calls = {
+			one: false,
+			two: false,
+			three: false
+		}
+
+		ee.on('stop-emitting', function() {
+			calls.one = true;
+			return false;
+		});
+
+		ee.on('stop-emitting', function() {
+			calls.two = true;
+		});
+
+		ee.on('stop-emitting', function() {
+			calls.three = true;
+		});
+
+		var result = ee.emit('stop-emitting');
+
+		expect(calls.one).toBe(true);
+		expect(calls.two).toBe(false);
+		expect(calls.three).toBe(false);
+		expect(result).toBe(false);
 	});
 });

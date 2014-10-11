@@ -1,25 +1,28 @@
 {
-	"name": "EventEmitter",
-	"description": "Simple EventEmitter class to Javascript",
-	"version": "0.0.4",
-	"author": {
-		"name": "Darlan Alves",
-		"email": "me@darlanalv.es"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/darlanalves/EventEmitter.git"
-	},
-	"devDependencies": {
-		"multipipe": "^0.1.1",
-		"gulp-jasmine": "^0.3.0",
-		"gulp": "^3.8.6",
-		"gulp-concat": "^2.3.4",
-		"gulp-uglify": "^0.3.1"
-	},
-	"engines": {
-		"node": "0.x",
-		"npm": "1.2.x"
-	},
-	"main": "./index"
+  "name": "EventEmitter",
+  "description": "EventEmitter implementation with cancellable events",
+  "version": "0.0.4",
+  "author": {
+    "name": "Darlan Alves",
+    "email": "me@darlanalv.es"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/darlanalves/EventEmitter.git"
+  },
+  "devDependencies": {
+    "multipipe": "^0.1.1",
+    "gulp": "^3.8.6",
+    "gulp-concat": "^2.3.4",
+    "gulp-uglify": "^0.3.1",
+    "karma": "^0.12.24",
+    "karma-jasmine": "^0.1.5",
+    "karma-phantomjs-launcher": "^0.1.4",
+    "gulp-sourcemaps": "^1.2.4"
+  },
+  "engines": {
+    "node": "0.x",
+    "npm": "1.2.x"
+  },
+  "main": "./src/EventEmitter"
 }

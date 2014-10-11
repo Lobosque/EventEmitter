@@ -1,54 +1,46 @@
+/* jshint node: true */
+'use strict';
+
 var gulp = require('gulp'),
-	concat = require('gulp-concat'),
-	jasmine = require('gulp-jasmine'),
 	uglify = require('gulp-uglify'),
 	multipipe = require('multipipe'),
-	fs = require('fs'),
+	sourcemaps = require('gulp-sourcemaps'),
+	karma = require('karma').server,
+	version = require('./package.json').version;
 
-	src = ['build/banner.txt', 'build/prefix', 'src/EventEmitter.js', 'build/suffix'],
-	specSrc = [
-		'dist/EventEmitter-latest.js',
-		'test/EventEmitter.spec.js'
-	],
-
-	pkg = fs.readFileSync('package.json'),
-	version = JSON.parse(String(pkg)).version;
-
-gulp.task('build-latest', function() {
-	var pipe = multipipe(
-		gulp.src(src),
-		concat('EventEmitter-latest.js'),
-		gulp.dest('dist/')
-	);
-
-	pipeErr(pipe);
-});
-
-gulp.task('build-release', function() {
+function buildRelease() {
 	console.log('Building version ' + version);
-
-	var pipe = multipipe(
-		gulp.src('dist/EventEmitter-latest.js'),
-		concat('EventEmitter-' + version + '.js'),
+	multipipe(
+		gulp.src('src/EventEmitter.js'),
+		sourcemaps.init(),
 		uglify(),
-		gulp.dest('dist/')
+		sourcemaps.write('.'),
+		gulp.dest('dist'),
+		onError
 	);
-	pipeErr(pipe);
-});
-
-gulp.task('watch', function() {
-	gulp.watch(src, ['build', 'test']);
-});
-
-gulp.task('test', function() {
-	pipeErr(multipipe(gulp.src(specSrc), jasmine()));
-});
-
-gulp.task('build', ['build-latest', 'test']);
-gulp.task('release', ['build-latest', 'test', 'build-release']);
-
-function pipeErr(pipe) {
-	pipe.on('error', function(err) {
-		console.warn(err);
-	});
 }
+
+function runTests(done) {
+	karma.start({
+		configFile: __dirname + '/karma.conf.js',
+		singleRun: true
+	}, done);
+}
+
+function tdd(done) {
+	karma.start({
+		configFile: __dirname + '/karma.conf.js'
+	}, done);
+}
+
+function onError(err) {
+	if (err) {
+		console.warn(err.message || err);
+		if (err.stack) console.log(err.stack);
+	}
+}
+
+gulp.task('build', ['test'], buildRelease);
+gulp.task('tdd', tdd);
+gulp.task('test', runTests);
+gulp.task('default', ['tdd']);
