@@ -1,7 +1,7 @@
 {
-  "name": "EventEmitter",
+  "name": "da-event-emitter",
   "description": "EventEmitter implementation with cancellable events",
-  "version": "0.0.5",
+  "version": "0.0.0",
   "author": {
     "name": "Darlan Alves",
     "email": "me@darlanalv.es"
@@ -19,10 +19,6 @@
     "karma-jasmine": "^0.1.5",
     "karma-phantomjs-launcher": "^0.1.4",
     "gulp-sourcemaps": "^1.2.4"
-  },
-  "engines": {
-    "node": "0.x",
-    "npm": "1.2.x"
   },
   "main": "./src/EventEmitter"
 }
