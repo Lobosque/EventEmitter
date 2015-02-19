@@ -1,4 +1,5 @@
 (function(global) {
+	/* jshint validthis: true */
 	'use strict';
 	/**
 	 * Simple event emitter, cancellable with "return false" statement
@@ -305,10 +306,12 @@
 		return EventEmitter;
 	}
 
-	if (typeof define === 'function' && define.amd) {
+	if (typeof global.angular !== 'undefined' && global.angular.module) {
+		global.angular.module('EventEmitter', []).factory('EventEmitter', factory);
+	} else if (typeof define === 'function' && define.amd) {
 		define(factory);
 	} else if (typeof module !== 'undefined' && module.exports) {
-		module.exports = EventEmitter
+		module.exports = EventEmitter;
 	} else {
 		global.EventEmitter = EventEmitter;
 	}
