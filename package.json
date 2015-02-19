@@ -1,7 +1,7 @@
 {
   "name": "da-event-emitter",
   "description": "EventEmitter implementation with cancellable events",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Darlan Alves",
     "email": "me@darlanalv.es"
