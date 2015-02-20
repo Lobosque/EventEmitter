@@ -242,7 +242,7 @@
 		 * @return {Object}
 		 */
 		getListeners: function() {
-			$getEventListeners.apply(this, arguments);
+			return $getEventListeners.apply(this, arguments);
 		},
 
 		/**
