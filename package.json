@@ -20,5 +20,5 @@
     "karma-phantomjs-launcher": "^0.1.4",
     "gulp-sourcemaps": "^1.2.4"
   },
-  "main": "./src/EventEmitter"
+  "main": "src/EventEmitter.js"
 }
